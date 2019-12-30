@@ -1,9 +1,10 @@
 import numpy as np
+import pandas as pd
 from flask import Flask, request, jsonify, render_template
 import pickle
 
 app = Flask(__name__)
-model = pickle.load(open('model.pkl', 'rb'))
+model = pickle.load(open('breast_cancer_detector.pickle', 'rb'))
 
 @app.route('/')
 def home():
@@ -11,17 +12,29 @@ def home():
 
 @app.route('/predict',methods=['POST'])
 def predict():
-    '''
-    For rendering results on HTML GUI
-    '''
-    int_features = [int(x) for x in request.form.values()]
-    final_features = [np.array(int_features)]
-    prediction = model.predict(final_features)
+    input_features = [float(x) for x in request.form.values()]
+    features_value = [np.array(input_features)]
+    
+    features_name = ['mean radius', 'mean texture', 'mean perimeter', 'mean area',
+       'mean smoothness', 'mean compactness', 'mean concavity',
+       'mean concave points', 'mean symmetry', 'mean fractal dimension',
+       'radius error', 'texture error', 'perimeter error', 'area error',
+       'smoothness error', 'compactness error', 'concavity error',
+       'concave points error', 'symmetry error', 'fractal dimension error',
+       'worst radius', 'worst texture', 'worst perimeter', 'worst area',
+       'worst smoothness', 'worst compactness', 'worst concavity',
+       'worst concave points', 'worst symmetry', 'worst fractal dimension']
+    
+    df = pd.DataFrame(features_value, columns=features_name)
+    output = model.predict(df)
+        
+    if output == 1:
+        res_val = "** breast cancer **"
+    else:
+        res_val = "no breast cancer"
+        
 
-    output = round(prediction[0], 2)
-
-    return render_template('index.html', prediction_text='Employee Salary should be $ {}'.format(output))
-
+    return render_template('index.html', prediction_text='Patient has {}'.format(res_val))
 
 if __name__ == "__main__":
     app.run()
